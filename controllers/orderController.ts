@@ -22,7 +22,8 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
     } = req.body;
 
     // Extract & normalize user email
-    const targetEmail = (userEmail || email || "").trim().toLowerCase();
+    const rawEmail = (userEmail || email || "");
+    const targetEmail = (Array.isArray(rawEmail) ? rawEmail[0] : String(rawEmail)).trim().toLowerCase();
 
     if (!targetEmail) {
       res.status(400).json({
@@ -79,7 +80,8 @@ export const getOrders = async (req: Request, res: Response): Promise<void> => {
     let filter: any = {};
 
     if (email) {
-      filter.userEmail = String(email).trim().toLowerCase();
+      const emailStr = Array.isArray(email) ? String(email[0]) : String(email);
+      filter.userEmail = emailStr.trim().toLowerCase();
     } else if (userId) {
       filter.$or = [{ user: userId }, { userId: userId }];
     }
@@ -104,7 +106,8 @@ export const getOrders = async (req: Request, res: Response): Promise<void> => {
 // GET /api/orders/user/:email
 export const getOrdersByUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const emailParam = req.params.email?.trim().toLowerCase();
+    const rawEmailParam = req.params.email;
+    const emailParam = rawEmailParam ? String(rawEmailParam).trim().toLowerCase() : "";
 
     if (!emailParam) {
       res.status(400).json({ success: false, message: "User email parameter is required" });
