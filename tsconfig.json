@@ -1,5 +1,7 @@
 {
   "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./",
     "module": "commonjs",
     "moduleResolution": "bundler",
     "target": "esnext",
@@ -18,5 +20,7 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true
-  }
+  },
+  "include": ["**/*"],
+  "exclude": ["node_modules", "dist"]
 }
