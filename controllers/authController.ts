@@ -4,6 +4,10 @@ import jwt from "jsonwebtoken";
 import mongoose from "mongoose";
 import User from "../models/User";
 
+interface AuthRequest extends Request {
+  user?: { id: string };
+}
+
 const generateToken = (userId: string) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET || "default_secret", {
     expiresIn: "7d",
@@ -15,8 +19,7 @@ const findUserByIdentifier = async (id: string) => {
   if (mongoose.Types.ObjectId.isValid(id)) {
     return await User.findById(id);
   }
-  // Fallback to lookup by email or custom lookup if id is not a standard hex ObjectId
-  return await User.findOne({ email: id });
+  return await User.findOne({ email: id.toLowerCase() });
 };
 
 // @desc    Get user by ID
@@ -31,6 +34,8 @@ export const getUserById = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
+    const image = user.profilePicture || user.photoUrl || user.avatar || "";
+
     return res.status(200).json({
       success: true,
       user: {
@@ -39,9 +44,9 @@ export const getUserById = async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        profilePicture: user.profilePicture || user.photoUrl || user.avatar || "",
-        photoUrl: user.photoUrl || user.profilePicture || user.avatar || "",
-        avatar: user.avatar || user.profilePicture || user.photoUrl || "",
+        profilePicture: image,
+        photoUrl: image,
+        avatar: image,
       },
     });
   } catch (error: any) {
@@ -51,7 +56,7 @@ export const getUserById = async (req: Request, res: Response) => {
 
 // @desc    Update user profile
 // @route   PUT /api/auth/update-profile
-export const updateProfile = async (req: Request, res: Response) => {
+export const updateProfile = async (req: AuthRequest, res: Response) => {
   try {
     const { userId, name, photoUrl, password } = req.body;
 
@@ -59,24 +64,38 @@ export const updateProfile = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "User ID is required" });
     }
 
+    // Auth Middleware Check Guard (optional enhancement if req.user is attached)
+    if (req.user && req.user.id !== userId) {
+      return res.status(403).json({ success: false, message: "Unauthorized profile update request" });
+    }
+
     const user = await findUserByIdentifier(userId);
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    if (name) user.name = name;
+    if (name && name.trim() !== "") {
+      user.name = name.trim();
+    }
+
     if (photoUrl !== undefined) {
-      user.profilePicture = photoUrl;
-      user.photoUrl = photoUrl;
-      user.avatar = photoUrl;
+      const cleanPhoto = photoUrl.trim();
+      user.profilePicture = cleanPhoto;
+      user.photoUrl = cleanPhoto;
+      user.avatar = cleanPhoto;
     }
 
     if (password && password.trim() !== "") {
+      if (password.length < 6) {
+        return res.status(400).json({ success: false, message: "Password must be at least 6 characters long" });
+      }
       const salt = await bcrypt.genSalt(10);
-      user.password = await bcrypt.hash(password, salt);
+      user.password = await bcrypt.hash(password.trim(), salt);
     }
 
     await user.save();
+
+    const updatedImage = user.profilePicture || user.photoUrl || user.avatar || "";
 
     return res.status(200).json({
       success: true,
@@ -86,9 +105,9 @@ export const updateProfile = async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        profilePicture: user.profilePicture,
-        photoUrl: user.photoUrl,
-        avatar: user.avatar,
+        profilePicture: updatedImage,
+        photoUrl: updatedImage,
+        avatar: updatedImage,
       },
     });
   } catch (error: any) {
@@ -106,7 +125,8 @@ export const signup = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Please fill in all fields" });
     }
 
-    const userExists = await User.findOne({ email });
+    const normalizedEmail = email.toLowerCase().trim();
+    const userExists = await User.findOne({ email: normalizedEmail });
     if (userExists) {
       return res.status(400).json({ success: false, message: "User already exists with this email" });
     }
@@ -115,8 +135,8 @@ export const signup = async (req: Request, res: Response) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     const user = await User.create({
-      name,
-      email,
+      name: name.trim(),
+      email: normalizedEmail,
       password: hashedPassword,
       profilePicture: profileImage || "",
       photoUrl: profileImage || "",
@@ -135,6 +155,8 @@ export const signup = async (req: Request, res: Response) => {
         email: user.email,
         role: user.role,
         profilePicture: user.profilePicture,
+        photoUrl: user.photoUrl,
+        avatar: user.avatar,
       },
     });
   } catch (error: any) {
@@ -151,7 +173,7 @@ export const login = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Please enter email and password" });
     }
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user || !user.password) {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
@@ -162,6 +184,7 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const token = generateToken(user._id.toString());
+    const image = user.profilePicture || user.photoUrl || user.avatar || "";
 
     return res.status(200).json({
       success: true,
@@ -172,7 +195,9 @@ export const login = async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        profilePicture: user.profilePicture || user.photoUrl || user.avatar || "",
+        profilePicture: image,
+        photoUrl: image,
+        avatar: image,
       },
     });
   } catch (error: any) {
@@ -189,12 +214,13 @@ export const googleLogin = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Invalid Google user data" });
     }
 
-    let user = await User.findOne({ email: googleUserData.email });
+    const normalizedEmail = googleUserData.email.toLowerCase().trim();
+    let user = await User.findOne({ email: normalizedEmail });
 
     if (!user) {
       user = await User.create({
         name: googleUserData.name || "Google User",
-        email: googleUserData.email,
+        email: normalizedEmail,
         role: "user",
         profilePicture: googleUserData.profileImage || "",
         photoUrl: googleUserData.profileImage || "",
@@ -203,6 +229,7 @@ export const googleLogin = async (req: Request, res: Response) => {
     }
 
     const token = generateToken(user._id.toString());
+    const image = user.profilePicture || user.photoUrl || user.avatar || "";
 
     return res.status(200).json({
       success: true,
@@ -213,7 +240,9 @@ export const googleLogin = async (req: Request, res: Response) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        profilePicture: user.profilePicture || user.photoUrl || "",
+        profilePicture: image,
+        photoUrl: image,
+        avatar: image,
       },
     });
   } catch (error: any) {
