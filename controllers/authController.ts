@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import User from "../models/User";
 
 const generateToken = (userId: string) => {
@@ -9,12 +10,25 @@ const generateToken = (userId: string) => {
   });
 };
 
+// Helper function to safely query users by MongoDB ObjectId or external string identifiers
+const findUserByIdentifier = async (id: string) => {
+  const isObjectId = mongoose.Types.ObjectId.isValid(id);
+  return await User.findOne({
+    $or: [
+      ...(isObjectId ? [{ _id: id }] : []),
+      { googleId: id },
+      { id: id }
+    ]
+  });
+};
+
 // @desc    Get user by ID
 // @route   GET /api/auth/user/:id
 export const getUserById = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const user = await User.findById(id).select("-password");
+
+    const user = await findUserByIdentifier(id);
 
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
@@ -47,7 +61,7 @@ export const updateProfile = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "User ID is required" });
     }
 
-    const user = await User.findById(userId);
+    const user = await findUserByIdentifier(userId);
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
