@@ -7,12 +7,6 @@ export interface IUser extends Document {
     avatar?: string;
     createdAt: Date;
 }
-declare const _default: mongoose.Model<any, {}, {}, {}, any, any, any> | mongoose.Model<IUser, {}, {}, {}, Document<unknown, {}, IUser, {}, mongoose.DefaultSchemaOptions> & IUser & Required<{
-    _id: mongoose.Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IUser>;
+declare const _default: mongoose.Model<any, {}, {}, {}, any, any, any>;
 export default _default;
 //# sourceMappingURL=User.d.ts.map

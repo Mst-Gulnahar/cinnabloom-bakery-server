@@ -1,5 +1,8 @@
-import { Schema, model } from 'mongoose';
-const foodSchema = new Schema({
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Food = void 0;
+const mongoose_1 = require("mongoose");
+const foodSchema = new mongoose_1.Schema({
     product_name: { type: String, required: true, trim: true },
     product_price: { type: Number, required: true, min: 0 },
     product_description: { type: String, required: true },
@@ -30,5 +33,5 @@ const foodSchema = new Schema({
 // Indexes for super fast searching & filtering
 foodSchema.index({ product_name: 'text', product_description: 'text' });
 foodSchema.index({ category_id: 1, flavor: 1, country_of_origin: 1, product_price: 1 });
-export const Food = model('Food', foodSchema);
+exports.Food = (0, mongoose_1.model)('Food', foodSchema);
 //# sourceMappingURL=Food.js.map

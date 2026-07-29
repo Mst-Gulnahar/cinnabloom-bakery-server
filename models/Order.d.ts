@@ -21,12 +21,6 @@ export interface IOrder extends Document {
     status: string;
     createdAt: Date;
 }
-declare const _default: mongoose.Model<any, {}, {}, {}, any, any, any> | mongoose.Model<IOrder, {}, {}, {}, Document<unknown, {}, IOrder, {}, mongoose.DefaultSchemaOptions> & IOrder & Required<{
-    _id: mongoose.Types.ObjectId;
-}> & {
-    __v: number;
-} & {
-    id: string;
-}, any, IOrder>;
+declare const _default: mongoose.Model<any, {}, {}, {}, any, any, any>;
 export default _default;
 //# sourceMappingURL=Order.d.ts.map

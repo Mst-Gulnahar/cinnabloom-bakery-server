@@ -1,7 +1,12 @@
-import dotenv from 'dotenv';
-import mongoose from 'mongoose';
-import { Food } from './models/Food';
-dotenv.config();
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const dotenv_1 = __importDefault(require("dotenv"));
+const mongoose_1 = __importDefault(require("mongoose"));
+const Food_1 = require("./models/Food");
+dotenv_1.default.config();
 const SEED_FOODS = [
     {
         product_name: "Spicy Firebird Chicken Ramen",
@@ -88,11 +93,11 @@ const seedDatabase = async () => {
             throw new Error("MONGODB_URI is not defined in .env file.");
         }
         console.log("🌱 Connecting to MongoDB...");
-        await mongoose.connect(mongoUri);
+        await mongoose_1.default.connect(mongoUri);
         console.log("🧹 Clearing all existing food items...");
-        await Food.deleteMany({}); // Clears out all old data
+        await Food_1.Food.deleteMany({}); // Clears out all old data
         console.log("✨ Seeding fresh Cinnabloom menu with new categorization schema...");
-        const createdFoods = await Food.insertMany(SEED_FOODS);
+        const createdFoods = await Food_1.Food.insertMany(SEED_FOODS);
         console.log(`✅ Successfully seeded ${createdFoods.length} items into MongoDB! ✨`);
         process.exit(0);
     }

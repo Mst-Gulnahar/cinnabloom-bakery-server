@@ -1,29 +1,35 @@
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import User from "../models/User";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.googleLogin = exports.login = exports.signup = void 0;
+const bcryptjs_1 = __importDefault(require("bcryptjs"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const User_1 = __importDefault(require("../models/User"));
 // Generate JWT Token
 const generateToken = (userId) => {
-    return jwt.sign({ id: userId }, process.env.JWT_SECRET || "default_secret", {
+    return jsonwebtoken_1.default.sign({ id: userId }, process.env.JWT_SECRET || "default_secret", {
         expiresIn: "7d",
     });
 };
 // @desc    Register a new user
 // @route   POST /api/auth/signup
-export const signup = async (req, res) => {
+const signup = async (req, res) => {
     try {
         const { name, email, password } = req.body;
         if (!name || !email || !password) {
             return res.status(400).json({ success: false, message: "Please fill in all fields" });
         }
-        const userExists = await User.findOne({ email });
+        const userExists = await User_1.default.findOne({ email });
         if (userExists) {
             return res.status(400).json({ success: false, message: "User already exists with this email" });
         }
         // Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        const salt = await bcryptjs_1.default.genSalt(10);
+        const hashedPassword = await bcryptjs_1.default.hash(password, salt);
         // Create user
-        const user = await User.create({
+        const user = await User_1.default.create({
             name,
             email,
             password: hashedPassword,
@@ -44,19 +50,20 @@ export const signup = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message || "Server Error" });
     }
 };
+exports.signup = signup;
 // @desc    Login user
 // @route   POST /api/auth/login
-export const login = async (req, res) => {
+const login = async (req, res) => {
     try {
         const { email, password } = req.body;
         if (!email || !password) {
             return res.status(400).json({ success: false, message: "Please enter email and password" });
         }
-        const user = await User.findOne({ email });
+        const user = await User_1.default.findOne({ email });
         if (!user) {
             return res.status(401).json({ success: false, message: "Invalid credentials" });
         }
-        const isMatch = await bcrypt.compare(password, user.password);
+        const isMatch = await bcryptjs_1.default.compare(password, user.password);
         if (!isMatch) {
             return res.status(401).json({ success: false, message: "Invalid credentials" });
         }
@@ -76,19 +83,20 @@ export const login = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message || "Server Error" });
     }
 };
+exports.login = login;
 // @desc    Google OAuth login/signup
 // @route   POST /api/auth/google
-export const googleLogin = async (req, res) => {
+const googleLogin = async (req, res) => {
     try {
         const { user: googleUserData } = req.body;
         if (!googleUserData || !googleUserData.email) {
             return res.status(400).json({ success: false, message: "Invalid Google user data" });
         }
         // Check if user already exists
-        let user = await User.findOne({ email: googleUserData.email });
+        let user = await User_1.default.findOne({ email: googleUserData.email });
         // If user does not exist, create a new record
         if (!user) {
-            user = await User.create({
+            user = await User_1.default.create({
                 name: googleUserData.name || "Google User",
                 email: googleUserData.email,
                 role: "user",
@@ -110,4 +118,5 @@ export const googleLogin = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message || "Server Error" });
     }
 };
+exports.googleLogin = googleLogin;
 //# sourceMappingURL=authController.js.map

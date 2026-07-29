@@ -1,8 +1,10 @@
-import { Router } from "express";
-import { signup, login, googleLogin } from "../controllers/authController";
-const router = Router();
-router.post("/google", googleLogin);
-router.post("/signup", signup);
-router.post("/login", login);
-export default router;
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const authController_1 = require("../controllers/authController");
+const router = (0, express_1.Router)();
+router.post("/google", authController_1.googleLogin);
+router.post("/signup", authController_1.signup);
+router.post("/login", authController_1.login);
+exports.default = router;
 //# sourceMappingURL=authRoutes.js.map

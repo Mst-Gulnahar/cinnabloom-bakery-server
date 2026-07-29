@@ -1,6 +1,12 @@
-import Order from "../models/Order";
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getOrdersByUser = exports.getOrders = exports.createOrder = void 0;
+const Order_1 = __importDefault(require("../models/Order"));
 // POST /api/orders
-export const createOrder = async (req, res) => {
+const createOrder = async (req, res) => {
     console.log("📥 [POST /api/orders] Payload:", JSON.stringify(req.body, null, 2));
     try {
         const { user, userId, userEmail, email, userName, items, subtotal, deliveryFee, total, totalAmount, address, destination, } = req.body;
@@ -19,7 +25,7 @@ export const createOrder = async (req, res) => {
         const finalTotal = Number(total || totalAmount || 0);
         const finalDeliveryFee = Number(deliveryFee ?? 2.5);
         const finalSubtotal = Number(subtotal || finalTotal - finalDeliveryFee);
-        const newOrder = new Order({
+        const newOrder = new Order_1.default({
             orderId,
             user: user || userId || undefined,
             userId: String(userId || user || ""),
@@ -50,8 +56,9 @@ export const createOrder = async (req, res) => {
         });
     }
 };
+exports.createOrder = createOrder;
 // GET /api/orders (Supports ?email= & ?userId=)
-export const getOrders = async (req, res) => {
+const getOrders = async (req, res) => {
     try {
         const { email, userId } = req.query;
         let filter = {};
@@ -62,7 +69,7 @@ export const getOrders = async (req, res) => {
         else if (userId) {
             filter.$or = [{ user: userId }, { userId: userId }];
         }
-        const orders = await Order.find(filter).sort({ createdAt: -1 });
+        const orders = await Order_1.default.find(filter).sort({ createdAt: -1 });
         res.status(200).json({
             success: true,
             count: orders.length,
@@ -78,8 +85,9 @@ export const getOrders = async (req, res) => {
         });
     }
 };
+exports.getOrders = getOrders;
 // GET /api/orders/user/:email
-export const getOrdersByUser = async (req, res) => {
+const getOrdersByUser = async (req, res) => {
     try {
         const rawEmailParam = req.params.email;
         const emailParam = rawEmailParam ? String(rawEmailParam).trim().toLowerCase() : "";
@@ -87,7 +95,7 @@ export const getOrdersByUser = async (req, res) => {
             res.status(400).json({ success: false, message: "User email parameter is required" });
             return;
         }
-        const orders = await Order.find({ userEmail: emailParam }).sort({ createdAt: -1 });
+        const orders = await Order_1.default.find({ userEmail: emailParam }).sort({ createdAt: -1 });
         res.status(200).json({
             success: true,
             count: orders.length,
@@ -103,4 +111,5 @@ export const getOrdersByUser = async (req, res) => {
         });
     }
 };
+exports.getOrdersByUser = getOrdersByUser;
 //# sourceMappingURL=orderController.js.map

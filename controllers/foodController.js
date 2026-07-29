@@ -1,14 +1,17 @@
-import { Food } from '../models/Food';
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.softDeleteFood = exports.updateFood = exports.getFoodById = exports.getFoods = exports.addFood = void 0;
+const Food_1 = require("../models/Food");
 // @desc    Add a new food item
 // @route   POST /api/foods
-export const addFood = async (req, res) => {
+const addFood = async (req, res) => {
     try {
         const { product_name, product_price, product_description, img_url, category_id, flavor, country_of_origin, status, is_featured, } = req.body;
         if (!product_name || !product_price || !product_description || !img_url || !category_id) {
             res.status(400).json({ success: false, message: 'Please provide all required fields.' });
             return;
         }
-        const newFood = await Food.create({
+        const newFood = await Food_1.Food.create({
             product_name,
             product_price,
             product_description,
@@ -33,9 +36,10 @@ export const addFood = async (req, res) => {
         });
     }
 };
+exports.addFood = addFood;
 // @desc    Get all food items with advanced filtering (Name, Category, Flavor, Country, Price Range)
 // @route   GET /api/foods
-export const getFoods = async (req, res) => {
+const getFoods = async (req, res) => {
     try {
         const { search, category, flavor, country, minPrice, maxPrice, is_featured, sort } = req.query;
         // Base query: Always exclude deleted items
@@ -80,7 +84,7 @@ export const getFoods = async (req, res) => {
             sortOption = { product_price: 1 };
         if (sort === 'price_desc')
             sortOption = { product_price: -1 };
-        const foods = await Food.find(query).sort(sortOption);
+        const foods = await Food_1.Food.find(query).sort(sortOption);
         res.status(200).json({
             success: true,
             count: foods.length,
@@ -95,12 +99,13 @@ export const getFoods = async (req, res) => {
         });
     }
 };
+exports.getFoods = getFoods;
 // @desc    Get a single food item by ID
 // @route   GET /api/foods/:id
-export const getFoodById = async (req, res) => {
+const getFoodById = async (req, res) => {
     try {
         const { id } = req.params;
-        const food = await Food.findById(id);
+        const food = await Food_1.Food.findById(id);
         if (!food || food.status === 'deleted') {
             res.status(404).json({ success: false, message: 'Food item not found.' });
             return;
@@ -115,12 +120,13 @@ export const getFoodById = async (req, res) => {
         });
     }
 };
+exports.getFoodById = getFoodById;
 // @desc    Update a food item
 // @route   PUT /api/foods/:id
-export const updateFood = async (req, res) => {
+const updateFood = async (req, res) => {
     try {
         const { id } = req.params;
-        const updatedFood = await Food.findByIdAndUpdate(id, req.body, {
+        const updatedFood = await Food_1.Food.findByIdAndUpdate(id, req.body, {
             new: true,
             runValidators: true,
         });
@@ -138,12 +144,13 @@ export const updateFood = async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to update food item.' });
     }
 };
+exports.updateFood = updateFood;
 // @desc    Soft delete a food item
 // @route   DELETE /api/foods/:id
-export const softDeleteFood = async (req, res) => {
+const softDeleteFood = async (req, res) => {
     try {
         const { id } = req.params;
-        const deletedFood = await Food.findByIdAndUpdate(id, {
+        const deletedFood = await Food_1.Food.findByIdAndUpdate(id, {
             status: 'deleted',
             deletedAt: new Date(),
         }, { new: true });
@@ -161,4 +168,5 @@ export const softDeleteFood = async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to delete food item.' });
     }
 };
+exports.softDeleteFood = softDeleteFood;
 //# sourceMappingURL=foodController.js.map
