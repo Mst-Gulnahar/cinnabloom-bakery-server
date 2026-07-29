@@ -10,16 +10,13 @@ const generateToken = (userId: string) => {
   });
 };
 
-// Helper function to safely query users by MongoDB ObjectId or external string identifiers
 const findUserByIdentifier = async (id: string) => {
-  const isObjectId = mongoose.Types.ObjectId.isValid(id);
-  return await User.findOne({
-    $or: [
-      ...(isObjectId ? [{ _id: id }] : []),
-      { googleId: id },
-      { id: id }
-    ]
-  });
+  if (!id) return null;
+  if (mongoose.Types.ObjectId.isValid(id)) {
+    return await User.findById(id);
+  }
+  // Fallback to lookup by email or custom lookup if id is not a standard hex ObjectId
+  return await User.findOne({ email: id });
 };
 
 // @desc    Get user by ID
@@ -37,13 +34,14 @@ export const getUserById = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       user: {
-        id: user._id,
-        _id: user._id,
+        id: user._id.toString(),
+        _id: user._id.toString(),
         name: user.name,
         email: user.email,
         role: user.role,
         profilePicture: user.profilePicture || user.photoUrl || user.avatar || "",
         photoUrl: user.photoUrl || user.profilePicture || user.avatar || "",
+        avatar: user.avatar || user.profilePicture || user.photoUrl || "",
       },
     });
   } catch (error: any) {
@@ -83,8 +81,8 @@ export const updateProfile = async (req: Request, res: Response) => {
     return res.status(200).json({
       success: true,
       user: {
-        id: user._id,
-        _id: user._id,
+        id: user._id.toString(),
+        _id: user._id.toString(),
         name: user.name,
         email: user.email,
         role: user.role,
@@ -94,12 +92,12 @@ export const updateProfile = async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
+    console.error("Error in updateProfile:", error);
     return res.status(500).json({ success: false, message: error.message || "Server Error" });
   }
 };
 
 // @desc    Register a new user
-// @route   POST /api/auth/signup
 export const signup = async (req: Request, res: Response) => {
   try {
     const { name, email, password, profileImage } = req.body;
@@ -131,8 +129,8 @@ export const signup = async (req: Request, res: Response) => {
       success: true,
       token,
       user: {
-        id: user._id,
-        _id: user._id,
+        id: user._id.toString(),
+        _id: user._id.toString(),
         name: user.name,
         email: user.email,
         role: user.role,
@@ -145,7 +143,6 @@ export const signup = async (req: Request, res: Response) => {
 };
 
 // @desc    Login user
-// @route   POST /api/auth/login
 export const login = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
@@ -155,11 +152,11 @@ export const login = async (req: Request, res: Response) => {
     }
 
     const user = await User.findOne({ email });
-    if (!user) {
+    if (!user || !user.password) {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
-    const isMatch = await bcrypt.compare(password, user.password!);
+    const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
@@ -170,8 +167,8 @@ export const login = async (req: Request, res: Response) => {
       success: true,
       token,
       user: {
-        id: user._id,
-        _id: user._id,
+        id: user._id.toString(),
+        _id: user._id.toString(),
         name: user.name,
         email: user.email,
         role: user.role,
@@ -184,7 +181,6 @@ export const login = async (req: Request, res: Response) => {
 };
 
 // @desc    Google OAuth login/signup
-// @route   POST /api/auth/google
 export const googleLogin = async (req: Request, res: Response) => {
   try {
     const { user: googleUserData } = req.body;
@@ -202,6 +198,7 @@ export const googleLogin = async (req: Request, res: Response) => {
         role: "user",
         profilePicture: googleUserData.profileImage || "",
         photoUrl: googleUserData.profileImage || "",
+        avatar: googleUserData.profileImage || "",
       });
     }
 
@@ -211,8 +208,8 @@ export const googleLogin = async (req: Request, res: Response) => {
       success: true,
       token,
       user: {
-        id: user._id,
-        _id: user._id,
+        id: user._id.toString(),
+        _id: user._id.toString(),
         name: user.name,
         email: user.email,
         role: user.role,

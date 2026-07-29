@@ -15,12 +15,7 @@ const UserSchema = new Schema<IUser>(
   {
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
-    password: { 
-      type: String, 
-      required: function(this: IUser): boolean { 
-        return !this.avatar; 
-      } 
-    }, // Optional if using OAuth
+    password: { type: String }, // Optional for OAuth & updates without password change
     role: { type: String, enum: ["user", "admin"], default: "user" },
     profilePicture: { type: String, default: "" },
     photoUrl: { type: String, default: "" },
